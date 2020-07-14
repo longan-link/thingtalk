@@ -1,5 +1,7 @@
 """High-level Thing base class implementation."""
 
+import typing
+
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError
 
@@ -10,10 +12,10 @@ from starlette.websockets import WebSocketDisconnect
 class Thing:
     """A Web Thing."""
 
-    type = []
-    description = ""
+    type: typing.List[str] = []
+    description: str = ""
 
-    def __init__(self, id_, title):
+    def __init__(self, id_: str, title: str):
         """
         Initialize the object.
         id_ -- the thing's unique ID - must be a URI
@@ -36,9 +38,9 @@ class Thing:
         self.subscribers = {}
         self.owners = []
         self.href_prefix = ""
-        self.ui_href = None
+        self.ui_href: typing.Optional[str] = None
 
-    async def as_thing_description(self):
+    async def as_thing_description(self) -> typing.Dict[str, typing.Any]:
         """
         Return the thing state as a Thing Description.
         Returns the state as a dictionary.
@@ -82,18 +84,18 @@ class Thing:
 
         return thing
 
-    async def get_href(self):
+    async def get_href(self) -> str:
         """Get this thing's href."""
         if self.href_prefix:
             return self.href_prefix
 
         return "/"
 
-    async def get_ui_href(self):
+    async def get_ui_href(self) -> str:
         """Get the UI href."""
         return self.ui_href
 
-    async def set_href_prefix(self, prefix):
+    async def set_href_prefix(self, prefix: str) -> None:
         """
         Set the prefix of any hrefs associated with this thing.
         prefix -- the prefix
@@ -107,49 +109,49 @@ class Thing:
             for action in self.actions[action_name]:
                 await action.set_href_prefix(prefix)
 
-    async def set_ui_href(self, href):
+    async def set_ui_href(self, href: str) -> None:
         """
         Set the href of this thing's custom UI.
         href -- the href
         """
         self.ui_href = href
 
-    async def get_id(self):
+    async def get_id(self) -> str:
         """
         Get the ID of the thing.
         Returns the ID as a string.
         """
         return self.id
 
-    async def get_title(self):
+    async def get_title(self) -> str:
         """
         Get the title of the thing.
         Returns the title as a string.
         """
         return self.title
 
-    async def get_context(self):
+    async def get_context(self) -> str:
         """
         Get the type context of the thing.
         Returns the context as a string.
         """
         return self.context
 
-    async def get_type(self):
+    async def get_type(self) -> typing.List[str]:
         """
         Get the type(s) of the thing.
         Returns the list of types.
         """
         return self.type
 
-    async def get_description(self):
+    async def get_description(self) -> str:
         """
         Get the description of the thing.
         Returns the description as a string.
         """
         return self.description
 
-    async def get_property_descriptions(self):
+    async def get_property_descriptions(self) -> dict:
         """
         Get the thing's properties as a dictionary.
         Returns the properties as a dictionary, i.e. name -> description.
@@ -158,7 +160,7 @@ class Thing:
             k: await v.as_property_description() for k, v in self.properties.items()
         }
 
-    async def get_action_descriptions(self, action_name=None):
+    async def get_action_descriptions(self, action_name: typing.Optional[str] = None):
         """
         Get the thing's actions as an array.
         action_name -- Optional action name to get descriptions for

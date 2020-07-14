@@ -4,16 +4,18 @@ from websockets import ConnectionClosedOK
 from starlette import status
 from starlette.types import Scope, Receive, Send
 from starlette.requests import Request
-from starlette.websockets import WebSocket, WebSocketDisconnect
+from starlette.websockets import WebSocket, WebSocketDisconnect, Message
 from starlette.responses import UJSONResponse
 from starlette.exceptions import HTTPException
 from starlette.endpoints import HTTPEndpoint, WebSocketEndpoint
 
 from .auth import requires
 from .errors import PropertyError
+from .action import Action
+from .thing import Thing
 
 
-async def perform_action(action):
+async def perform_action(action: Action) -> None:
     """Perform an Action in a coroutine."""
     await action.start()
 
@@ -26,7 +28,7 @@ class BaseHandler(HTTPEndpoint):
         request = Request(self.scope, receive=self.receive)
         self.things = request.app.state.things
 
-    async def get_thing(self, thing_id):
+    async def get_thing(self, thing_id: str) -> Thing:
         """
         Get the thing this request is for.
         things -- list of Things managed by this server
@@ -40,7 +42,7 @@ class ThingsHandler(BaseHandler):
     """Handle a request to / when the server manages multiple things."""
 
     @requires('authenticated')
-    async def get(self, request: Request):
+    async def get(self, request: Request) -> UJSONResponse:
         """
         Handle a GET request.
         property_name -- the name of the property from the URL path
@@ -90,7 +92,7 @@ class ThingHandler(BaseHandler):
     """Handle a request to /."""
 
     @requires('authenticated')
-    async def get(self, request: Request):
+    async def get(self, request: Request) -> UJSONResponse:
         """
         Handle a GET request, including websocket requests.
         thing_id -- ID of the thing this request is for
@@ -126,7 +128,7 @@ class WsThingHandler(WebSocketEndpoint):
 
     encoding = "json"
 
-    async def get_thing(self, thing_id):
+    async def get_thing(self, thing_id: str) -> Thing:
         """
         Get the thing this request is for.
         things -- list of Things managed by this server
@@ -162,7 +164,7 @@ class WsThingHandler(WebSocketEndpoint):
             await self.on_disconnect(websocket, close_code)
 
     @requires('authenticated')
-    async def on_connect(self, websocket):
+    async def on_connect(self, websocket: WebSocket) -> None:
         """
         Handle a GET request, including websocket requests.
         thing_id -- ID of the thing this request is for
@@ -213,7 +215,7 @@ class WsThingHandler(WebSocketEndpoint):
             except (WebSocketDisconnect, ConnectionClosedOK):
                 pass
 
-    async def on_receive(self, websocket, message):
+    async def on_receive(self, websocket: WebSocket, message: Message):
         """
         Handle an incoming message.
         message -- message to handle
@@ -326,7 +328,7 @@ class WsThingHandler(WebSocketEndpoint):
             except (WebSocketDisconnect, ConnectionClosedOK):
                 pass
 
-    async def on_disconnect(self, websocket, close_code):
+    async def on_disconnect(self, websocket: WebSocket, close_code) -> None:
         """Handle a close event on the socket."""
 
         if hasattr(self, "thing") and self.thing:
@@ -337,7 +339,7 @@ class PropertiesHandler(BaseHandler):
     """Handle a request to /properties."""
 
     @requires('authenticated')
-    async def get(self, request: Request):
+    async def get(self, request: Request) -> UJSONResponse:
         """
         Handle a GET request.
         thing_id -- ID of the thing this request is for
@@ -354,7 +356,7 @@ class PropertyHandler(BaseHandler):
     """Handle a request to /properties/<property>."""
 
     @requires('authenticated')
-    async def get(self, request: Request):
+    async def get(self, request: Request) -> UJSONResponse:
         """
         Handle a GET request.
         thing_id -- ID of the thing this request is for
@@ -375,7 +377,7 @@ class PropertyHandler(BaseHandler):
             raise HTTPException(status_code=404)
 
     @requires('authenticated')
-    async def put(self, request: Request):
+    async def put(self, request: Request) -> UJSONResponse:
         """
         Handle a PUT request.
         thing_id -- ID of the thing this request is for
@@ -413,7 +415,7 @@ class ActionsHandler(BaseHandler):
     """Handle a request to /actions."""
 
     @requires('authenticated')
-    async def get(self, request: Request):
+    async def get(self, request: Request) -> UJSONResponse:
         """
         Handle a GET request.
         thing_id -- ID of the thing this request is for
@@ -427,7 +429,7 @@ class ActionsHandler(BaseHandler):
         return UJSONResponse(await thing.get_action_descriptions())
 
     @requires('authenticated')
-    async def post(self, request: Request):
+    async def post(self, request: Request) -> UJSONResponse:
         """
         Handle a POST request.
         thing_id -- ID of the thing this request is for
@@ -463,7 +465,7 @@ class ActionHandler(BaseHandler):
     """Handle a request to /actions/<action_name>."""
 
     @requires('authenticated')
-    async def get(self, request: Request):
+    async def get(self, request: Request) -> UJSONResponse:
         """
         Handle a GET request.
         thing_id -- ID of the thing this request is for
@@ -481,7 +483,7 @@ class ActionHandler(BaseHandler):
         )
 
     @requires('authenticated')
-    async def post(self, request: Request):
+    async def post(self, request: Request) -> UJSONResponse:
         """
         Handle a POST request.
         thing_id -- ID of the thing this request is for
@@ -522,7 +524,7 @@ class ActionIDHandler(BaseHandler):
     """Handle a request to /actions/<action_name>/<action_id>."""
 
     @requires('authenticated')
-    async def get(self, request: Request):
+    async def get(self, request: Request) -> UJSONResponse:
         """
         Handle a GET request.
         thing_id -- ID of the thing this request is for
@@ -544,7 +546,7 @@ class ActionIDHandler(BaseHandler):
         return UJSONResponse(await action.as_action_description())
 
     @requires('authenticated')
-    async def put(self, request: Request):
+    async def put(self, request: Request) -> UJSONResponse:
         """
         Handle a PUT request.
         TODO: this is not yet defined in the spec
@@ -563,7 +565,7 @@ class ActionIDHandler(BaseHandler):
         return UJSONResponse({"msg": "success"}, status_code=200)
 
     @requires('authenticated')
-    async def delete(self, request: Request):
+    async def delete(self, request: Request) -> UJSONResponse:
         """
         Handle a DELETE request.
         thing_id -- ID of the thing this request is for
@@ -588,7 +590,7 @@ class EventsHandler(BaseHandler):
     """Handle a request to /events."""
 
     @requires('authenticated')
-    async def get(self, request: Request):
+    async def get(self, request: Request) -> UJSONResponse:
         """
         Handle a GET request.
         thing_id -- ID of the thing this request is for
@@ -606,7 +608,7 @@ class EventHandler(BaseHandler):
     """Handle a request to /events/<event_name>."""
 
     @requires('authenticated')
-    async def get(self, request: Request):
+    async def get(self, request: Request) -> UJSONResponse:
         """
         Handle a GET request.
         thing_id -- ID of the thing this request is for
