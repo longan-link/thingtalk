@@ -3,7 +3,13 @@
 *.log
 tmp/
 
+*.state
 *.egg-info/
+.pytest_cache/
 build/
 dist/
 __pycache__
+poetry.lock
+
+# Ignore dynaconf secret files
+.secrets.*

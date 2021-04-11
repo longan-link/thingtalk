@@ -1,0 +1,14 @@
+site_name: thingTalk
+repo_url: https://github.com/hidaris/thingtalk
+repo_name: hidaris/thingtalk
+
+nav:
+  - Intro: index.md
+  - User Guide:
+      - First Steps: index.md
+      - T2: about.md
+
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
